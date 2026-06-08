@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Env & secrets
+.env
+.env*.local
+.env.production
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Prisma
+prisma/*.db
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
