@@ -12,7 +12,7 @@ Each roadmap item is a self-contained increment completed in one session, then c
 - [ ] Next.js + TypeScript + Tailwind app, base layout, ESLint/Prettier
 - [ ] Postgres + Prisma (users, encrypted vault items, auth verifiers), Docker, CI stub
 - [ ] README, MIT LICENSE, .gitignore
-- [ ] `CRYPTO.md` design doc: threat model, key hierarchy, algorithm choices
+- [x] `CRYPTO.md` design doc: threat model, key hierarchy, algorithm choices
 
 ## Phase 1 — Crypto core (client-side, heavily tested)
 - [ ] Argon2id KDF (master password → master key) with sane params + salt
