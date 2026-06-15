@@ -26,3 +26,7 @@ prisma/*.db
 .vscode/
 *.swp
 *.log
+
+# Next.js generated types
+next-env.d.ts
+tsconfig.tsbuildinfo
