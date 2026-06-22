@@ -1,5 +1,37 @@
 # LockBox — Progress Log
 
+## 2026-06-22 — Phase 0 item 2: Postgres + Prisma data layer + Docker + CI
+
+**Done (Phase 0 item 2):** the persistence layer, modelled to honour the zero-knowledge
+guarantee from `CRYPTO.md §4` — the server stores **only ciphertext + an auth verifier**.
+
+- **`prisma/schema.prisma`** (Prisma 7, `provider = "prisma-client"` + pg driver adapter):
+  - **`User`** — `email`, `kdfSalt` (client Argon2id salt), per-user Argon2id params
+    (`kdfMemoryKiB`/`kdfIterations`/`kdfParallelism`, for the §8 migration path), and
+    `authVerifier` (a PHC string verifying the auth key AK). Never stores the master password
+    or the vault key VK.
+  - **`VaultItem`** — opaque `ciphertext` (AES-256-GCM blob, tag appended) + `iv` + `version`
+    for optimistic concurrency. Deliberately **no** item-type/title/url columns: the server
+    can't tell a login from a card. Cascade delete; `[userId, updatedAt]` hot-path index.
+- **`prisma.config.ts`** — Prisma 7 config, `DATABASE_URL` injected here (not in schema).
+- **`src/lib/env.ts`** — Zod-validated, **lazy** `getEnv()` (no import-time throw; testable
+  `parseEnv`). **`src/lib/db.ts`** — `PrismaClient` singleton over a `pg` Pool + `PrismaPg`
+  adapter (hot-reload safe). Env validator unit-tested (**vitest 5/5**).
+- **`Dockerfile`** — multi-stage Next.js **standalone** (`output: "standalone"`): deps → build
+  (`prisma generate` + `next build`) → minimal non-root runtime. **`docker-compose.yml`** —
+  `web` + `postgres:16-alpine`, healthchecks, service-name wiring, named volume, env-overridable
+  host ports. `+ .dockerignore`, `+ .env.example`, `+ .prettierignore` (excludes generated client).
+- **`.github/workflows/ci.yml`** — **web** (npm ci → prisma generate → lint → typecheck →
+  format → test → build) + **docker** (buildx, GHA cache) jobs; concurrency cancel-in-progress.
+- Added deps: `@prisma/client`, `@prisma/adapter-pg`, `pg`, `zod`, `dotenv`, `vitest`, `@types/pg`.
+- **Verified (all green):** `tsc --noEmit` ✓ · `next lint --max-warnings 0` ✓ · `prettier --check` ✓ ·
+  `vitest` 5/5 ✓ · `next build` (standalone) ✓ · Docker image builds ✓ ·
+  `docker compose up --wait` → postgres + web **healthy**, web returns HTTP 200. (No migration
+  committed yet — generated on first DB-touching feature in Phase 2.)
+- **Roadmap:** Phase 0 — 3/4. **Next:** Phase 0 item 3 — README + MIT LICENSE + .gitignore
+  (LICENSE/.gitignore already present; finalize root README with architecture + run steps) →
+  closes Phase 0, then Phase 1 crypto core.
+
 ## 2026-06-15 — Phase 0: Next.js + TypeScript + Tailwind app scaffold
 
 **Done (Phase 0 item 1):** stood up the Next.js (App Router) application.

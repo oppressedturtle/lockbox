@@ -10,7 +10,7 @@ Each roadmap item is a self-contained increment completed in one session, then c
 
 ## Phase 0 — Foundation
 - [x] Next.js + TypeScript + Tailwind app, base layout, ESLint/Prettier
-- [ ] Postgres + Prisma (users, encrypted vault items, auth verifiers), Docker, CI stub
+- [x] Postgres + Prisma (users, encrypted vault items, auth verifiers), Docker, CI stub
 - [ ] README, MIT LICENSE, .gitignore
 - [x] `CRYPTO.md` design doc: threat model, key hierarchy, algorithm choices
 
