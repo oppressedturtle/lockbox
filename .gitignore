@@ -20,6 +20,9 @@ test-results/
 # Prisma
 prisma/*.db
 
+# Prisma generated client (regenerated via `prisma generate`)
+src/generated/
+
 # Editor / OS
 .DS_Store
 .idea/

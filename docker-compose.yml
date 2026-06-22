@@ -1,0 +1,38 @@
+# LockBox — local stack: web (Next.js) + postgres.
+# Copy .env.example to .env first:  cp .env.example .env
+# Bring it up:                      docker compose up --build
+name: lockbox
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lockbox}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lockbox}
+      POSTGRES_DB: ${POSTGRES_DB:-lockbox}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lockbox} -d ${POSTGRES_DB:-lockbox}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lockbox}:${POSTGRES_PASSWORD:-lockbox}@postgres:5432/${POSTGRES_DB:-lockbox}?schema=public
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+volumes:
+  pgdata:

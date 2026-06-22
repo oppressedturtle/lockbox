@@ -1,0 +1,78 @@
+// LockBox — zero-knowledge data model.
+//
+// Hard rule (see CRYPTO.md §4): the server stores ONLY ciphertext + an auth
+// verifier. No plaintext vault field, no master password, no vault key, and no
+// item-type metadata is ever persisted here. Anything that could reveal the
+// contents of a vault item lives exclusively inside `VaultItem.ciphertext`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  // Datasource URL is supplied via prisma.config.ts (Prisma 7), not inline.
+  provider = "postgresql"
+}
+
+/// An account. Stores the client-side KDF salt + parameters needed to
+/// re-derive the master key in the browser, and a server-side verifier of the
+/// auth key (AK). It never stores the master password or the vault key (VK).
+model User {
+  id    String @id @default(uuid()) @db.Uuid
+  email String @unique
+
+  /// Argon2id salt (16 random bytes) generated client-side at registration and
+  /// returned at login so the browser can re-derive the master key. Not secret
+  /// (CRYPTO.md §2.2).
+  kdfSalt Bytes
+
+  /// Argon2id parameters used to derive the master key. Stored per-user so the
+  /// client derives consistently and we have a migration path if we re-tune
+  /// (CRYPTO.md §3, §8).
+  kdfMemoryKiB   Int @default(65536) // 64 MiB
+  kdfIterations  Int @default(3)
+  kdfParallelism Int @default(1)
+
+  /// Server-side verifier of the auth key (a PHC string: algorithm + params +
+  /// server salt + hash). Proves knowledge of AK without ever storing AK in the
+  /// clear (CRYPTO.md §3, §4.3). The verifier is cryptographically unrelated to
+  /// the vault key, so leaking it cannot decrypt the vault.
+  authVerifier String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vaultItems VaultItem[]
+
+  @@map("users")
+}
+
+/// An encrypted vault entry. The server treats this as opaque ciphertext; it
+/// cannot tell a login from a card from a secure note — the item kind, title,
+/// username, password, URL, notes, card data and TOTP secrets all live inside
+/// the encrypted blob (CRYPTO.md §4.1).
+model VaultItem {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// AES-256-GCM ciphertext of the item JSON. The 128-bit GCM authentication
+  /// tag is appended to the ciphertext (Web Crypto `encrypt` semantics,
+  /// CRYPTO.md §4.1).
+  ciphertext Bytes
+
+  /// 12-byte random IV, unique per encryption and never reused under the same
+  /// key (CRYPTO.md §3.1).
+  iv Bytes
+
+  /// Optimistic-concurrency version for sync/conflict handling (CRYPTO.md §4.1).
+  version Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Hot path: list/sync a user's items newest-first.
+  @@index([userId, updatedAt])
+  @@map("vault_items")
+}
