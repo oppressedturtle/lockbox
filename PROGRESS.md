@@ -1,5 +1,36 @@
 # LockBox — Progress Log
 
+## 2026-06-23 — Phase 0 closed + Phase 1 crypto core (client-side, heavily tested)
+
+Phase 0 was already effectively complete (README/LICENSE/.gitignore all present) — checked off
+the last item. Then built the **entire Phase 1 crypto core** under `src/lib/crypto/`, the heart of
+LockBox's zero-knowledge design (per `CRYPTO.md`):
+
+- **`random.ts`** — CSPRNG helpers (`crypto.getRandomValues`): salts (16B) and GCM IVs (12B).
+- **`encoding.ts`** — env-agnostic base64/hex/utf-8 (no Node `Buffer`, so it runs in the browser)
+  + an `asBufferSource` shim for the TS 5.7 typed-array/`BufferSource` mismatch.
+- **`kdf.ts`** — **Argon2id** (vetted `hash-wasm`) master-password → 256-bit master key;
+  default params 64 MiB / t=3 / p=1 / 32B per `CRYPTO.md §3`.
+- **`keys.ts`** — **HKDF-SHA256** key hierarchy: MK → independent vault key + auth key via
+  distinct `info` labels; vault key imported as a **non-extractable** AES-256-GCM `CryptoKey`.
+- **`cipher.ts`** — **AES-256-GCM** encrypt/decrypt: fresh random IV per op, 128-bit tag, and
+  item metadata (id+userId) bound into the **AAD** (length-prefixed, unambiguous) so ciphertext
+  can't be relocated under a different id. Decryption fails closed with an opaque error.
+- **`index.ts`** — public barrel documenting the full register→derive→encrypt→decrypt flow.
+
+**Tests (`crypto.test.ts`, 28 cases) — fulfils every `CRYPTO.md §7` obligation:** Argon2id
+known-answer regression vector + determinism; **HKDF cross-checked against Node's independent
+`crypto.hkdfSync`**; AES-GCM round-trip over empty/unicode/50KB inputs; **tamper detection** on
+ciphertext / IV / AAD / wrong-key (all fail closed); **key independence** (VK≠AK); **IV
+uniqueness** (10 encrypts → 10 distinct IVs & ciphertexts); and an end-to-end flow asserting no
+plaintext leaks into the stored blob or auth key.
+
+**Verification (all green):** vitest **33/33**; `tsc --noEmit` clean; `next lint` clean; `next build` succeeds.
+
+**Next:** Phase 2 — zero-knowledge auth (registration/login with the auth-key verifier, session
+management, auto-lock on idle, rate limiting/lockout on auth endpoints).
+
+
 ## 2026-06-22 — Phase 0 item 2: Postgres + Prisma data layer + Docker + CI
 
 **Done (Phase 0 item 2):** the persistence layer, modelled to honour the zero-knowledge

@@ -11,14 +11,14 @@ Each roadmap item is a self-contained increment completed in one session, then c
 ## Phase 0 — Foundation
 - [x] Next.js + TypeScript + Tailwind app, base layout, ESLint/Prettier
 - [x] Postgres + Prisma (users, encrypted vault items, auth verifiers), Docker, CI stub
-- [ ] README, MIT LICENSE, .gitignore
+- [x] README, MIT LICENSE, .gitignore
 - [x] `CRYPTO.md` design doc: threat model, key hierarchy, algorithm choices
 
 ## Phase 1 — Crypto core (client-side, heavily tested)
-- [ ] Argon2id KDF (master password → master key) with sane params + salt
-- [ ] Key hierarchy: master key → vault (encryption) key + auth key (separate)
-- [ ] AES-256-GCM encrypt/decrypt helpers (random IV per item, AAD where useful)
-- [ ] Unit tests with known vectors; tamper/auth-tag failure tests
+- [x] Argon2id KDF (master password → master key) with sane params + salt
+- [x] Key hierarchy: master key → vault (encryption) key + auth key (separate)
+- [x] AES-256-GCM encrypt/decrypt helpers (random IV per item, AAD where useful)
+- [x] Unit tests with known vectors; tamper/auth-tag failure tests
 
 ## Phase 2 — Zero-knowledge auth
 - [ ] Registration/login using an auth key derived from master password (server stores a verifier, never the password)
