@@ -31,6 +31,8 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-lockbox}:${POSTGRES_PASSWORD:-lockbox}@postgres:5432/${POSTGRES_DB:-lockbox}?schema=public
+      # Required: HMAC secret for session tokens. Set SESSION_SECRET in your .env.
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set in .env}
     ports:
       - "${WEB_PORT:-3000}:3000"
 

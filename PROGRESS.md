@@ -1,5 +1,53 @@
 # LockBox — Progress Log
 
+## 2026-06-24 — Phase 2: zero-knowledge auth (server-side) + fixed red CI
+
+Built the **server-side zero-knowledge auth handshake** (CRYPTO.md §4.3, §5) — the client
+proves knowledge of the auth key (AK) without the master password or vault key ever reaching
+the server. New under `src/lib/server/`:
+
+- **`argon2.ts`** — server-side AK verifier. `hashAuthValue()` produces a PHC Argon2id string
+  (own 16B salt, 19 MiB/t=2) so AK is **never stored in the clear**; `verifyAuthValue()` is
+  constant-time and fail-closed. `spendVerifyTime()` runs an equal-cost dummy verify on the
+  unknown-email login branch to kill the timing-based **account-enumeration** oracle.
+- **`session.ts`** — stateless **HMAC-SHA256** signed session tokens (`userId:expiry.sig`),
+  constant-time signature check, expiry enforced. Tokens authenticate the *account only* and
+  carry **no key material** — a stolen token can't decrypt the vault (still needs the master
+  password to re-derive VK locally).
+- **`rateLimit.ts`** — reusable fixed-window `RateLimiter` + shared `authLimiter` (per-IP) and
+  `loginLimiter` (per-account lockout) to throttle online guessing/DoS.
+- **`decoy.ts`** — deterministic HMAC-derived decoy salt so the `/salt` endpoint returns a
+  stable, real-looking salt for **unknown** emails (no enumeration).
+- **`cookies.ts` / `auth.ts` / `http.ts`** — httpOnly + SameSite=Strict + Secure(prod) session
+  cookie, session attach/resolve glue, IP extraction + uniform error responses.
+- **`auth-schemas.ts`** — strict Zod validation (email normalisation, base64 byte-length checks
+  on salt/AK, bounded KDF params).
+
+**Routes (App Router):** `POST /api/auth/register` (creates user + AK verifier, opens session),
+`POST /api/auth/salt` (enumeration-resistant salt+params lookup), `POST /api/auth/login`
+(verify AK → session; per-IP throttle + per-account lockout + timing parity; uniform 401),
+`POST /api/auth/logout`, `GET /api/auth/me`. All 5 compile as **dynamic** route handlers.
+
+Also: made the Prisma client a **lazy proxy** (`db.ts`) so importing routes no longer reads env
+at module load → `next build` works without a live DATABASE_URL. Added `SESSION_SECRET` to the
+env schema (+ `.env.example`, docker-compose). Generated the **initial Prisma migration**
+(`prisma/migrations/.../init` — first DB-touching feature, as the schema anticipated). Added
+`vitest.config.ts` (resolves the `@/*` alias for server tests).
+
+**Fixed red CI:** the prior Phase 1 commit shipped the crypto core with double quotes, failing
+the `prettier --check` gate (CI run 28006687245 — `web` job red on `npm run format`). Ran
+`prettier --write` across `src` so the whole tree now conforms to the `singleQuote` config.
+
+**Verification (all green):** `tsc --noEmit` ✓ · `next lint --max-warnings 0` ✓ ·
+`prettier --check` ✓ · **vitest 52/52** (20 new: argon2, session, rateLimit, decoy) ✓ ·
+`next build` ✓ (5 auth routes dynamic). Live DB e2e deferred to QA (no Docker/PG locally this run).
+
+**Roadmap:** Phase 2 — items 1 (register/login + verifier) and 3 (rate limit/lockout) ✅.
+Item 2 partial: server session mgmt done; client auto-lock + re-auth UI lands with the vault UI.
+**Next:** finish Phase 2 item 2's client side alongside Phase 3 (vault item CRUD, client-side
+encrypted) — and a live-DB smoke of the auth flow once the stack is up.
+
+
 ## 2026-06-23 — Phase 0 closed + Phase 1 crypto core (client-side, heavily tested)
 
 Phase 0 was already effectively complete (README/LICENSE/.gitignore all present) — checked off

@@ -7,11 +7,11 @@
  * vault key from it.
  */
 
-import { asBufferSource } from "./encoding";
+import { asBufferSource } from './encoding';
 
 /** HKDF `info` labels — distinct domains keep the sub-keys cryptographically separate. */
-export const VAULT_KEY_INFO = "lockbox:vault";
-export const AUTH_KEY_INFO = "lockbox:auth";
+export const VAULT_KEY_INFO = 'lockbox:vault';
+export const AUTH_KEY_INFO = 'lockbox:auth';
 
 const SUBKEY_BYTES = 32; // 256-bit sub-keys
 
@@ -22,22 +22,15 @@ const SUBKEY_BYTES = 32; // 256-bit sub-keys
  * random key (Argon2id output), and the per-purpose `info` label provides the
  * domain separation we need. See RFC 5869 §3.1.
  */
-async function deriveSubKeyBits(
-  masterKey: Uint8Array,
-  info: string,
-): Promise<Uint8Array> {
-  const baseKey = await crypto.subtle.importKey(
-    "raw",
-    asBufferSource(masterKey),
-    "HKDF",
-    false,
-    ["deriveBits"],
-  );
+async function deriveSubKeyBits(masterKey: Uint8Array, info: string): Promise<Uint8Array> {
+  const baseKey = await crypto.subtle.importKey('raw', asBufferSource(masterKey), 'HKDF', false, [
+    'deriveBits',
+  ]);
 
   const bits = await crypto.subtle.deriveBits(
     {
-      name: "HKDF",
-      hash: "SHA-256",
+      name: 'HKDF',
+      hash: 'SHA-256',
       salt: new Uint8Array(0),
       info: asBufferSource(new TextEncoder().encode(info)),
     },
@@ -66,13 +59,10 @@ export function deriveAuthKeyBytes(masterKey: Uint8Array): Promise<Uint8Array> {
  * handle leaks (CRYPTO.md §5).
  */
 export async function importVaultKey(vaultKeyBytes: Uint8Array): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    "raw",
-    asBufferSource(vaultKeyBytes),
-    { name: "AES-GCM" },
-    false,
-    ["encrypt", "decrypt"],
-  );
+  return crypto.subtle.importKey('raw', asBufferSource(vaultKeyBytes), { name: 'AES-GCM' }, false, [
+    'encrypt',
+    'decrypt',
+  ]);
 }
 
 /**

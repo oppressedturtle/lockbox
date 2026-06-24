@@ -21,9 +21,9 @@ Each roadmap item is a self-contained increment completed in one session, then c
 - [x] Unit tests with known vectors; tamper/auth-tag failure tests
 
 ## Phase 2 — Zero-knowledge auth
-- [ ] Registration/login using an auth key derived from master password (server stores a verifier, never the password)
-- [ ] Session management, auto-lock on idle, re-auth to unlock vault
-- [ ] Rate limiting + lockout on auth endpoints
+- [x] Registration/login using an auth key derived from master password (server stores a verifier, never the password)
+- [ ] Session management, auto-lock on idle, re-auth to unlock vault _(server-side session mgmt done: signed cookie, /me, logout; client auto-lock + re-auth UI lands with the vault UI in Phase 3/6)_
+- [x] Rate limiting + lockout on auth endpoints
 
 ## Phase 3 — Vault items
 - [ ] CRUD for logins, secure notes, cards — all encrypted client-side before upload

@@ -22,8 +22,27 @@ function createPrismaClient(): PrismaClient {
   } as ConstructorParameters<typeof PrismaClient>[0]);
 }
 
-export const db: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
-
-if (getEnv().NODE_ENV !== 'production') {
-  globalForPrisma.prisma = db;
+/**
+ * Resolve the singleton client, constructing it (and validating env) lazily on
+ * first use. Deferring construction keeps module import side-effect-free, so
+ * `next build` can import route handlers without a live DATABASE_URL present.
+ */
+function getClient(): PrismaClient {
+  if (globalForPrisma.prisma) return globalForPrisma.prisma;
+  const client = createPrismaClient();
+  if (getEnv().NODE_ENV !== 'production') globalForPrisma.prisma = client;
+  return client;
 }
+
+/**
+ * Lazy proxy over the Prisma client. Property access (e.g. `db.user`) builds the
+ * real client on demand and forwards to it; no DB connection or env read happens
+ * until a query is actually issued.
+ */
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});

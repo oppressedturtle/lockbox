@@ -34,7 +34,7 @@ export function bytesToUtf8(bytes: Uint8Array): string {
 
 /** Standard base64 encode (browser `btoa`-compatible, chunked for large inputs). */
 export function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
+  let binary = '';
   const chunk = 0x8000; // avoid arg-count limits on String.fromCharCode
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
@@ -52,7 +52,7 @@ export function base64ToBytes(b64: string): Uint8Array {
   try {
     binary = atob(b64);
   } catch {
-    throw new Error("base64ToBytes: input is not valid base64");
+    throw new Error('base64ToBytes: input is not valid base64');
   }
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -63,9 +63,9 @@ export function base64ToBytes(b64: string): Uint8Array {
 
 /** Lowercase hex encode. */
 export function bytesToHex(bytes: Uint8Array): string {
-  let hex = "";
+  let hex = '';
   for (const b of bytes) {
-    hex += b.toString(16).padStart(2, "0");
+    hex += b.toString(16).padStart(2, '0');
   }
   return hex;
 }
@@ -77,13 +77,13 @@ export function bytesToHex(bytes: Uint8Array): string {
  */
 export function hexToBytes(hex: string): Uint8Array {
   if (hex.length % 2 !== 0) {
-    throw new Error("hexToBytes: input must have an even number of characters");
+    throw new Error('hexToBytes: input must have an even number of characters');
   }
   const out = new Uint8Array(hex.length / 2);
   for (let i = 0; i < out.length; i++) {
     const byte = Number.parseInt(hex.substr(i * 2, 2), 16);
     if (Number.isNaN(byte)) {
-      throw new Error("hexToBytes: input contains non-hex characters");
+      throw new Error('hexToBytes: input contains non-hex characters');
     }
     out[i] = byte;
   }

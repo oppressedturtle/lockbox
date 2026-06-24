@@ -7,8 +7,8 @@
  * the AAD binding prevents an attacker from relocating a victim's ciphertext
  * under a different item id (CRYPTO.md §4.2).
  */
-import { bytesToBase64, base64ToBytes, utf8ToBytes, asBufferSource } from "./encoding";
-import { generateIv } from "./random";
+import { bytesToBase64, base64ToBytes, utf8ToBytes, asBufferSource } from './encoding';
+import { generateIv } from './random';
 
 const TAG_LENGTH_BITS = 128;
 
@@ -52,7 +52,7 @@ export async function encryptItem(
   const iv = generateIv();
   const ct = await crypto.subtle.encrypt(
     {
-      name: "AES-GCM",
+      name: 'AES-GCM',
       iv: asBufferSource(iv),
       additionalData: asBufferSource(buildAad(aad)),
       tagLength: TAG_LENGTH_BITS,
@@ -84,7 +84,7 @@ export async function decryptItem(
   try {
     plaintextBuf = await crypto.subtle.decrypt(
       {
-        name: "AES-GCM",
+        name: 'AES-GCM',
         iv: asBufferSource(base64ToBytes(blob.iv)),
         additionalData: asBufferSource(buildAad(aad)),
         tagLength: TAG_LENGTH_BITS,
@@ -95,7 +95,7 @@ export async function decryptItem(
   } catch {
     // Normalise every failure mode (bad tag, bad AAD, malformed base64) into a
     // single opaque error so callers cannot distinguish *why* it failed.
-    throw new Error("decryption failed");
+    throw new Error('decryption failed');
   }
   return new TextDecoder().decode(plaintextBuf);
 }

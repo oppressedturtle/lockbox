@@ -14,6 +14,12 @@ import { z } from 'zod';
 const schema = z.object({
   DATABASE_URL: z.string().url(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  /**
+   * Secret used to sign stateless session tokens (HMAC-SHA256) and to derive the
+   * enumeration-resistant decoy salt for unknown accounts. Must be high-entropy
+   * and kept off the client. At least 32 chars so the HMAC key has real strength.
+   */
+  SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
 });
 
 /** Parsed, validated environment. Parameterised for testability. */

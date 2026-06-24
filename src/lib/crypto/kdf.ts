@@ -6,7 +6,7 @@
  * the device and is never stored. From MK we derive independent vault and auth
  * keys via HKDF (see keys.ts).
  */
-import { argon2id } from "hash-wasm";
+import { argon2id } from 'hash-wasm';
 
 /** Argon2id tuning parameters. */
 export interface Argon2Params {
@@ -48,10 +48,10 @@ export async function deriveMasterKey(
   params: Argon2Params = DEFAULT_ARGON2_PARAMS,
 ): Promise<Uint8Array> {
   if (password.length === 0) {
-    throw new RangeError("deriveMasterKey: password must not be empty");
+    throw new RangeError('deriveMasterKey: password must not be empty');
   }
   if (salt.length === 0) {
-    throw new RangeError("deriveMasterKey: salt must not be empty");
+    throw new RangeError('deriveMasterKey: salt must not be empty');
   }
 
   const hash = await argon2id({
@@ -61,7 +61,7 @@ export async function deriveMasterKey(
     iterations: params.iterations,
     parallelism: params.parallelism,
     hashLength: params.keyLengthBytes,
-    outputType: "binary",
+    outputType: 'binary',
   });
 
   return hash;

@@ -12,13 +12,7 @@
  *
  * See CRYPTO.md for the threat model, key hierarchy, and parameters.
  */
-export {
-  randomBytes,
-  generateSalt,
-  generateIv,
-  SALT_BYTES,
-  IV_BYTES,
-} from "./random";
+export { randomBytes, generateSalt, generateIv, SALT_BYTES, IV_BYTES } from './random';
 
 export {
   utf8ToBytes,
@@ -27,13 +21,9 @@ export {
   base64ToBytes,
   bytesToHex,
   hexToBytes,
-} from "./encoding";
+} from './encoding';
 
-export {
-  deriveMasterKey,
-  DEFAULT_ARGON2_PARAMS,
-  type Argon2Params,
-} from "./kdf";
+export { deriveMasterKey, DEFAULT_ARGON2_PARAMS, type Argon2Params } from './kdf';
 
 export {
   deriveVaultKeyBytes,
@@ -42,12 +32,6 @@ export {
   deriveVaultCryptoKey,
   VAULT_KEY_INFO,
   AUTH_KEY_INFO,
-} from "./keys";
+} from './keys';
 
-export {
-  encryptItem,
-  decryptItem,
-  buildAad,
-  type EncryptedBlob,
-  type ItemAad,
-} from "./cipher";
+export { encryptItem, decryptItem, buildAad, type EncryptedBlob, type ItemAad } from './cipher';
