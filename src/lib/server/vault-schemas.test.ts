@@ -15,15 +15,34 @@ function b64(n: number): string {
 
 const validIv = b64(IV_BYTES);
 const validCiphertext = b64(MIN_CIPHERTEXT_BYTES);
+const validId = '11111111-1111-4111-8111-111111111111';
 
 describe('createVaultItemSchema', () => {
-  it('accepts well-formed ciphertext + IV', () => {
-    const r = createVaultItemSchema.safeParse({ ciphertext: validCiphertext, iv: validIv });
+  it('accepts a well-formed id + ciphertext + IV', () => {
+    const r = createVaultItemSchema.safeParse({
+      id: validId,
+      ciphertext: validCiphertext,
+      iv: validIv,
+    });
     expect(r.success).toBe(true);
+  });
+
+  it('rejects a missing or non-UUID id', () => {
+    expect(
+      createVaultItemSchema.safeParse({ ciphertext: validCiphertext, iv: validIv }).success,
+    ).toBe(false);
+    expect(
+      createVaultItemSchema.safeParse({
+        id: 'not-a-uuid',
+        ciphertext: validCiphertext,
+        iv: validIv,
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects ciphertext shorter than the GCM tag', () => {
     const r = createVaultItemSchema.safeParse({
+      id: validId,
       ciphertext: b64(MIN_CIPHERTEXT_BYTES - 1),
       iv: validIv,
     });
@@ -32,6 +51,7 @@ describe('createVaultItemSchema', () => {
 
   it('rejects ciphertext over the size cap', () => {
     const r = createVaultItemSchema.safeParse({
+      id: validId,
       ciphertext: b64(MAX_CIPHERTEXT_BYTES + 1),
       iv: validIv,
     });
@@ -40,23 +60,35 @@ describe('createVaultItemSchema', () => {
 
   it('rejects an IV that is not exactly 12 bytes', () => {
     expect(
-      createVaultItemSchema.safeParse({ ciphertext: validCiphertext, iv: b64(IV_BYTES - 1) })
-        .success,
+      createVaultItemSchema.safeParse({
+        id: validId,
+        ciphertext: validCiphertext,
+        iv: b64(IV_BYTES - 1),
+      }).success,
     ).toBe(false);
     expect(
-      createVaultItemSchema.safeParse({ ciphertext: validCiphertext, iv: b64(IV_BYTES + 1) })
-        .success,
+      createVaultItemSchema.safeParse({
+        id: validId,
+        ciphertext: validCiphertext,
+        iv: b64(IV_BYTES + 1),
+      }).success,
     ).toBe(false);
   });
 
   it('rejects non-base64 input', () => {
-    const r = createVaultItemSchema.safeParse({ ciphertext: 'not base64 !!!', iv: validIv });
+    const r = createVaultItemSchema.safeParse({
+      id: validId,
+      ciphertext: 'not base64 !!!',
+      iv: validIv,
+    });
     expect(r.success).toBe(false);
   });
 
   it('rejects missing fields', () => {
-    expect(createVaultItemSchema.safeParse({ ciphertext: validCiphertext }).success).toBe(false);
-    expect(createVaultItemSchema.safeParse({ iv: validIv }).success).toBe(false);
+    expect(
+      createVaultItemSchema.safeParse({ id: validId, ciphertext: validCiphertext }).success,
+    ).toBe(false);
+    expect(createVaultItemSchema.safeParse({ id: validId, iv: validIv }).success).toBe(false);
   });
 });
 

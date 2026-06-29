@@ -26,7 +26,7 @@ Each roadmap item is a self-contained increment completed in one session, then c
 - [x] Rate limiting + lockout on auth endpoints
 
 ## Phase 3 — Vault items
-- [ ] CRUD for logins, secure notes, cards — all encrypted client-side before upload _(server-side CRUD API done: `/api/vault` GET+POST, `/api/vault/[id]` GET+PUT+DELETE — ownership-scoped, optimistic-concurrency on PUT, IDOR-safe 404s, opaque ciphertext only; client-side encrypt + item-type UI lands with the vault UI in Phase 6)_
+- [x] CRUD for logins, secure notes, cards — all encrypted client-side before upload _(server-side CRUD API + client-side typed encrypt/decrypt layer done: `src/lib/vault` plaintext model — discriminated union login/note/card with metadata — validated, JSON-serialised, AES-256-GCM-encrypted with a client-generated UUID bound into the AAD, then uploaded as opaque ciphertext; the visual item-type forms land with the vault UI in Phase 6)_
 - [ ] Folders/tags, client-side search over decrypted data, sort
 - [ ] Optimistic UI, sync, conflict handling
 

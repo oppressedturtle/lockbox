@@ -18,10 +18,23 @@ import { authLimiter } from '@/lib/server/rateLimit';
 import {
   badRequest,
   clientIp,
+  conflict,
   notAuthenticated,
   readJson,
   tooManyRequests,
 } from '@/lib/server/http';
+
+/** Prisma unique-constraint violation code (duplicate primary key). */
+const PRISMA_UNIQUE_VIOLATION = 'P2002';
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === PRISMA_UNIQUE_VIOLATION
+  );
+}
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const userId = await getSessionUserId(req);
@@ -46,14 +59,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const parsed = createVaultItemSchema.safeParse(await readJson(req));
   if (!parsed.success) return badRequest(parsed.error.issues[0]?.message ?? 'Invalid request.');
 
-  const item = await db.vaultItem.create({
-    data: {
-      userId,
-      ciphertext: Buffer.from(base64ToBytes(parsed.data.ciphertext)),
-      iv: Buffer.from(base64ToBytes(parsed.data.iv)),
-    },
-    select: vaultItemSelect,
-  });
-
-  return NextResponse.json({ item: serializeVaultItem(item) }, { status: 201 });
+  try {
+    const item = await db.vaultItem.create({
+      data: {
+        id: parsed.data.id,
+        userId,
+        ciphertext: Buffer.from(base64ToBytes(parsed.data.ciphertext)),
+        iv: Buffer.from(base64ToBytes(parsed.data.iv)),
+      },
+      select: vaultItemSelect,
+    });
+    return NextResponse.json({ item: serializeVaultItem(item) }, { status: 201 });
+  } catch (error) {
+    // A duplicate id (vanishingly unlikely with a random UUIDv4). Return a
+    // generic 409 that doesn't reveal whether the id belongs to this account.
+    if (isUniqueViolation(error)) return conflict('Item id already exists. Retry with a new id.');
+    throw error;
+  }
 }

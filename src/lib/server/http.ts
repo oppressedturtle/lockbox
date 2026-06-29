@@ -42,6 +42,11 @@ export function notAuthenticated(): NextResponse {
   return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 });
 }
 
+/** JSON 409 — the request conflicts with current state (e.g. a duplicate id). */
+export function conflict(message = 'Conflict.'): NextResponse {
+  return NextResponse.json({ error: message }, { status: 409 });
+}
+
 /**
  * 404 — also returned when an item exists but belongs to another user, so the
  * API never confirms the existence of someone else's row (no IDOR oracle).

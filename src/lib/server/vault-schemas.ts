@@ -49,8 +49,14 @@ function base64Within(minBytes: number, maxBytes: number, label: string) {
 const ciphertextSchema = base64Within(MIN_CIPHERTEXT_BYTES, MAX_CIPHERTEXT_BYTES, 'ciphertext');
 const ivSchema = base64Within(IV_BYTES, IV_BYTES, 'iv');
 
-/** Create a new vault item — client uploads ciphertext + IV only. */
+/**
+ * Create a new vault item. The `id` is a UUID **generated on the client** so it
+ * can be bound into the ciphertext's GCM AAD before encryption (CRYPTO.md §4.2);
+ * the server stores the client's id rather than minting its own. The server
+ * still only ever sees opaque ciphertext + IV.
+ */
 export const createVaultItemSchema = z.object({
+  id: z.string().uuid(),
   ciphertext: ciphertextSchema,
   iv: ivSchema,
 });

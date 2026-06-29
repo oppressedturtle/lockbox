@@ -1,5 +1,38 @@
 # LockBox — Progress Log
 
+## 2026-06-29 (b) — Phase 3: client-side typed vault-item encryption layer + client-generated ids
+
+Built the **client side** of Phase 3 item 1 — the typed bridge between a structured vault entry and
+the opaque ciphertext the server stores — and closed the design gap that AAD binding had with
+server-minted ids.
+
+- **`src/lib/vault/schema.ts`** — the *decrypted* item model: a Zod discriminated union over
+  `kind` (`login` / `note` / `card`) sharing a metadata base (`title`, `folder`, `tags`, `notes`)
+  plus a `v` schema-version field for future migration. Per-kind defaults (e.g. empty
+  `username`/`password`) so a partially-filled item parses to a complete, well-typed object. Even
+  the title/folder are part of the plaintext — the server reads none of it (zero-knowledge).
+- **`src/lib/vault/item.ts`** — `encryptVaultItem` validates → `JSON.stringify` → size-guards
+  against the server's 64 KiB cap (minus the 16B GCM tag) → AES-256-GCM-encrypts; `decryptVaultItem`
+  decrypts → `JSON.parse` → re-validates, failing closed with a uniform `vault item is corrupt` so a
+  tampered blob is indistinguishable from a malformed one. `newVaultItemId()` mints the client UUID.
+- **Client-generated ids (design fix).** The GCM AAD binds the item `id` (CRYPTO.md §4.2), but the
+  id has to exist *before* encryption — so the **client** generates the UUID and the server stores it
+  rather than minting its own. `createVaultItemSchema` now requires a UUID `id`; `POST /api/vault`
+  uses it and maps a Prisma unique-violation (`P2002`) to a generic **409** that doesn't reveal
+  whether the colliding id belongs to the caller. Added a `conflict()` HTTP helper.
+
+**Tests:** `vault/item.test.ts` (15 cases): round-trip per kind, no-plaintext-leak, IV-uniqueness,
+default application, invalid-item + over-cap rejection, fail-closed on wrong AAD / wrong key, corrupt
+detection, unknown-kind + bad-card-expiry. Updated `vault-schemas.test.ts` for the new `id` field.
+
+**Verification (all green):** `tsc --noEmit` ✓ · `next lint --max-warnings 0` ✓ · `prettier --check`
+✓ · **vitest 76/76** (15 new) ✓ · `next build` ✓ (both `/api/vault` routes dynamic).
+
+**Roadmap:** Phase 3 item 1 ✅ (server CRUD + client encrypt/decrypt). The visual item-type forms
+land with the vault UI in Phase 6. **Next:** Phase 3 item 2 — folders/tags + client-side
+search/sort over decrypted items.
+
+
 ## 2026-06-29 — Phase 3: server-side vault-item CRUD API (zero-knowledge, ownership-scoped)
 
 Built the **server-side vault-item API** — the storage/sync surface for Phase 3. The server
