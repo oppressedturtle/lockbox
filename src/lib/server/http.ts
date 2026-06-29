@@ -37,6 +37,19 @@ export function unauthorized(message = 'Invalid email or password.'): NextRespon
   return NextResponse.json({ error: message }, { status: 401 });
 }
 
+/** 401 for requests without a valid session cookie. */
+export function notAuthenticated(): NextResponse {
+  return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 });
+}
+
+/**
+ * 404 — also returned when an item exists but belongs to another user, so the
+ * API never confirms the existence of someone else's row (no IDOR oracle).
+ */
+export function notFound(message = 'Not found.'): NextResponse {
+  return NextResponse.json({ error: message }, { status: 404 });
+}
+
 /** Parse a JSON body, returning `null` (not throwing) on malformed input. */
 export async function readJson(req: NextRequest): Promise<unknown> {
   try {

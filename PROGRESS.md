@@ -1,5 +1,38 @@
 # LockBox — Progress Log
 
+## 2026-06-29 — Phase 3: server-side vault-item CRUD API (zero-knowledge, ownership-scoped)
+
+Built the **server-side vault-item API** — the storage/sync surface for Phase 3. The server
+moves only opaque ciphertext + IV (CRYPTO.md §4.1); it never decrypts, and every query is scoped
+to the session `userId` so accounts are fully isolated.
+
+- **`src/lib/server/vault-schemas.ts`** — strict Zod validation. `ciphertext` is base64 bounded to
+  `[16, 65536]` bytes (16B = the AES-GCM tag floor for empty plaintext; 64 KiB cap per row); `iv`
+  must decode to exactly 12 bytes (`IV_BYTES`); update payloads require a non-negative integer
+  `expectedVersion` so no blind overwrites.
+- **`src/lib/server/vault.ts`** — shared row→DTO serialiser (`Bytes`/`Buffer` → base64) + a narrow
+  `vaultItemSelect` so handlers never over-select.
+- **`src/lib/server/http.ts`** — added `notAuthenticated()` (401) and `notFound()` (404). The 404 is
+  reused for "exists but owned by someone else" so the API is **not an IDOR oracle** for which ids exist.
+- **`POST/GET /api/vault`** — list the caller's items newest-first; create from client-encrypted
+  ciphertext + IV (per-IP write throttle via `authLimiter`).
+- **`GET/PUT/DELETE /api/vault/[id]`** — fetch/replace/remove one item, all scoped to `userId` with
+  UUID-validated ids. **PUT uses optimistic concurrency**: it compares `expectedVersion`, returns
+  **409 + the latest item** on a mismatch so a stale tab can't clobber a newer edit, and guards the
+  write itself with `updateMany … where version = expectedVersion` (+`increment`) so a racing update loses.
+
+**Tests (`vault-schemas.test.ts`, 9 cases):** ciphertext too-short / too-large / non-base64 /
+missing; IV wrong-length (±1); negative / non-integer / missing `expectedVersion`.
+
+**Verification (all green):** `tsc --noEmit` ✓ · `next lint --max-warnings 0` ✓ · `prettier --check` ✓ ·
+**vitest 61/61** (9 new) ✓ · `next build` ✓ (both `/api/vault` routes dynamic). Live-DB e2e of the
+CRUD + concurrency paths deferred to QA (no Docker/PG locally this run).
+
+**Roadmap:** Phase 3 item 1 — server-side CRUD API ✅ (client-side encrypt + item-type UI lands with
+the vault UI in Phase 6). **Next:** Phase 3 item 2 (folders/tags + client-side search/sort) or the
+vault UI that wires encrypt→upload→list→decrypt end to end.
+
+
 ## 2026-06-24 — Phase 2: zero-knowledge auth (server-side) + fixed red CI
 
 Built the **server-side zero-knowledge auth handshake** (CRYPTO.md §4.3, §5) — the client
