@@ -27,7 +27,7 @@ Each roadmap item is a self-contained increment completed in one session, then c
 
 ## Phase 3 — Vault items
 - [x] CRUD for logins, secure notes, cards — all encrypted client-side before upload _(server-side CRUD API + client-side typed encrypt/decrypt layer done: `src/lib/vault` plaintext model — discriminated union login/note/card with metadata — validated, JSON-serialised, AES-256-GCM-encrypted with a client-generated UUID bound into the AAD, then uploaded as opaque ciphertext; the visual item-type forms land with the vault UI in Phase 6)_
-- [ ] Folders/tags, client-side search over decrypted data, sort
+- [x] Folders/tags, client-side search over decrypted data, sort _(`src/lib/vault/query.ts`: folder/tag collection with counts, AND-combined filters by query/folder/tags/kind, and stable multi-key sort — all computed client-side over decrypted `VaultEntry`s; secrets kept out of the search haystack)_
 - [ ] Optimistic UI, sync, conflict handling
 
 ## Phase 4 — Password tools

@@ -1,5 +1,38 @@
 # LockBox — Progress Log
 
+## 2026-07-01 — Phase 3 item 2: folders/tags + client-side search & sort
+
+Built the **client-side organisation layer** over decrypted items — the query a vault list view
+runs on every keystroke. The server stores only opaque ciphertext (CRYPTO.md §4.1) and can neither
+search nor sort, so all of this is computed locally from the plaintext `VaultItem`s after decrypt.
+
+- **`src/lib/vault/query.ts`** — a `VaultEntry` pairs a decrypted `VaultItem` with the server
+  metadata that lives *outside* the blob (`id`, `version`, `updatedAt`), so the list can be sorted
+  by recency and keyed by id without re-deriving anything.
+  - **`collectFolders`** / **`collectTags`** — distinct folders (alpha-sorted) and tags
+    (most-used first) with entry counts; trims blanks, counts a duplicated tag once per entry.
+  - **`filterEntries`** — AND-combined filters by free-text `query`, `folder`, `tags` (must have
+    *all*), and `kind`. Multi-term queries AND across fields.
+  - **`sortEntries`** — by `title` / `updated` / `kind`, asc or desc, with a **deterministic
+    tie-break** (title then id) so ordering is stable across renders. Default = newest-updated first.
+  - **`queryVault`** — one-shot filter-then-sort. Neither helper mutates its input.
+- **Security choice:** the search haystack deliberately **excludes raw secrets** — password, CVV,
+  TOTP seed, and the full card PAN (only the last 4 digits are searchable). Keeps a query fragment
+  from matching a password by accident and mirrors standard password-manager behaviour.
+
+**Tests (`query.test.ts`, 21 cases):** folder/tag counting incl. dup-tag; filter by
+kind/folder/tags(AND)/query; searchable login+note+card fields; **password / full-PAN / CVV never
+match**; multi-term AND; combined filters; sort asc/desc/default + deterministic tie-break;
+no-mutation guards; end-to-end `queryVault`.
+
+**Verification (all green):** `tsc --noEmit` ✓ · `next lint --max-warnings 0` ✓ · `prettier --check`
+✓ · **vitest 97/97** (21 new) ✓ · `next build` ✓.
+
+**Roadmap:** Phase 3 item 2 ✅. **Next:** Phase 3 item 3 — optimistic UI, sync, conflict handling
+(the client-side counterpart to the server's optimistic-concurrency PUT), or begin the Phase 6 vault
+UI that wires encrypt→upload→list→decrypt→search end to end.
+
+
 ## 2026-06-29 (b) — Phase 3: client-side typed vault-item encryption layer + client-generated ids
 
 Built the **client side** of Phase 3 item 1 — the typed bridge between a structured vault entry and
